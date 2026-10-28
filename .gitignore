@@ -5,6 +5,7 @@ build/
 *.appex
 *.o
 *.dSYM
+*.zip
 
 # macOS system files
 .DS_Store
