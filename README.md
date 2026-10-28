@@ -52,12 +52,12 @@
 ### 🍺 Варіант 1: Через Homebrew (Рекомендовано)
 Встановлення однією командою:
 ```bash
-brew install --no-quarantine Holii-1/tap/yasno
+brew install Holii-1/tap/yasno
 ```
 Або класично з підключенням тапу:
 ```bash
 brew tap Holii-1/tap
-brew install --cask --no-quarantine yasno
+brew install yasno
 ```
 
 > **Порада щодо першого запуску (macOS Gatekeeper):**
