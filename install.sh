@@ -21,7 +21,9 @@ echo "🧹 Очищуємо попередню збірку..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$MACOS_DIR" "$WIDGET_MACOS" /tmp/clang-cache
 
-echo "⚙️ Компілюємо основний застосунок..."
+MIN_MACOS="14.0"
+
+echo "⚙️ Компілюємо основний застосунок (Universal arm64 + x86_64, macOS ${MIN_MACOS}+)..."
 CORE_SOURCES=(
     "Sources/YasnoCore/YasnoModels.swift"
     "Sources/YasnoCore/ScheduleCalculator.swift"
@@ -39,12 +41,23 @@ CORE_SOURCES=(
 )
 
 swiftc -module-cache-path /tmp/clang-cache \
+       -target "arm64-apple-macosx${MIN_MACOS}" \
        -parse-as-library \
        -O \
        "${CORE_SOURCES[@]}" \
-       -o "$MACOS_DIR/YasnoWidget"
+       -o "$MACOS_DIR/YasnoWidget-arm64"
 
-echo "⚙️ Компілюємо розширення WidgetKit..."
+swiftc -module-cache-path /tmp/clang-cache \
+       -target "x86_64-apple-macosx${MIN_MACOS}" \
+       -parse-as-library \
+       -O \
+       "${CORE_SOURCES[@]}" \
+       -o "$MACOS_DIR/YasnoWidget-x86_64"
+
+lipo -create -output "$MACOS_DIR/YasnoWidget" "$MACOS_DIR/YasnoWidget-arm64" "$MACOS_DIR/YasnoWidget-x86_64"
+rm -f "$MACOS_DIR/YasnoWidget-arm64" "$MACOS_DIR/YasnoWidget-x86_64"
+
+echo "⚙️ Компілюємо розширення WidgetKit (Universal arm64 + x86_64, macOS ${MIN_MACOS}+)..."
 WIDGET_SOURCES=(
     "Sources/YasnoCore/YasnoModels.swift"
     "Sources/YasnoCore/ScheduleCalculator.swift"
@@ -57,12 +70,25 @@ WIDGET_SOURCES=(
 )
 
 swiftc -module-cache-path /tmp/clang-cache \
+       -target "arm64-apple-macosx${MIN_MACOS}" \
        -application-extension \
        -Xlinker -e -Xlinker _NSExtensionMain \
        -parse-as-library \
        -O \
        "${WIDGET_SOURCES[@]}" \
-       -o "$WIDGET_MACOS/YasnoWidgetExtension"
+       -o "$WIDGET_MACOS/YasnoWidgetExtension-arm64"
+
+swiftc -module-cache-path /tmp/clang-cache \
+       -target "x86_64-apple-macosx${MIN_MACOS}" \
+       -application-extension \
+       -Xlinker -e -Xlinker _NSExtensionMain \
+       -parse-as-library \
+       -O \
+       "${WIDGET_SOURCES[@]}" \
+       -o "$WIDGET_MACOS/YasnoWidgetExtension-x86_64"
+
+lipo -create -output "$WIDGET_MACOS/YasnoWidgetExtension" "$WIDGET_MACOS/YasnoWidgetExtension-arm64" "$WIDGET_MACOS/YasnoWidgetExtension-x86_64"
+rm -f "$WIDGET_MACOS/YasnoWidgetExtension-arm64" "$WIDGET_MACOS/YasnoWidgetExtension-x86_64"
 
 echo "📦 Формуємо пакет програми (App Bundle)..."
 cp Resources/Info.plist "$CONTENTS_DIR/Info.plist"
